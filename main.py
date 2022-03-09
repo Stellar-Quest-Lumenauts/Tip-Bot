@@ -38,6 +38,13 @@ async def processTip(amount, author, backer):
         return f"{author} is not registered! They have been notiified"
 
     # Check if the user has enough balance
+    if fetch_account_balance(public_key_backer) - float(amount) < 0:
+        return f"You do not have enough balance to tip <@{backer}> {amount} 🐻"   
+
+    # Generate XDR
+    xdr = generate_payment(public_key_backer, public_key_author, amount)
+
+    return f"{xdr}"
 
 @client.event
 async def on_ready():

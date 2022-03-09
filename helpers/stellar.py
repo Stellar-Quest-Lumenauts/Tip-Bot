@@ -28,14 +28,13 @@ def fetch_account_balance(pubKey: str) -> float:
     except Exception as e:
         print(f"Specified account ({pubKey}) does not exists:", e)
         return 0
-    balance = 0
 
     for b in acc["balances"]:
         if b["asset_type"] == "native":
             balance = float(b["balance"])
-            break
+            return balance
             
-    return balance
+    return -1
 
 def generate_payment(source_account: str, destination_account: str, amount: str) -> str:
     base_fee = server.fetch_base_fee()
@@ -49,12 +48,21 @@ def generate_payment(source_account: str, destination_account: str, amount: str)
         )
     )
 
-    transaction.append_payment_op(
-        destination=destination_account, 
-        amount=amount,
-        asset_code="XLM",
-    )
+    if fetch_account_balance(destination_account) == -1:
+        transaction.append_create_claimable_balance_op(
+            asset=Asset.native(), # TODO: Temporary
+            claimants=[Claimant(destination_account), Claimant(source_account)],
+            amount=amount,
+        )
+    else:
+        transaction.append_payment_op(
+            destination=destination_account, 
+            amount=amount,
+            asset_code="XLM", # TODO: Temporary
+        )
+
     transaction.build()
+    return transaction.to_xdr()
 
 def validate_pub_key(pub_key: str) -> bool:
     """
