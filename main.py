@@ -16,25 +16,25 @@ from settings.default import (
 if SENTRY_ENABLED:
     sentry_sdk.init(SENTRY_URL, traces_sample_rate=1.0)
 
-intents = discord.Intents(reactions=True)
+intents = discord.Intents(reactions=True, messages=True)
 client = discord.Client(intents=intents)
 slash = SlashCommand(client, sync_commands=True)
 conn = create_connection(DATABASE_NAME)
 
 
-def processTip(amount, author, backer):
+async def processTip(amount, author, backer):
     """
     This function is called when a user wants to send a tip to another user
     """
     # Get Both the backers, and User's public key
     public_key_backer = getUserPubKey(conn, backer)
-    public_key_author = getUserPubKey(conn, author)
+    public_key_author = getUserPubKey(conn, author.id)
 
     # Verify both accounts exist
     if public_key_backer is None:
         return f"You have attempted to tip a user but you have not linked your Stellar account. Please use `/link` to link your account."
     if public_key_author is None:
-        author.send(f"<@{backer.id}> attempted to tip you with {amount} 🐻 but you have not linked your Stellar account. Please use `/link` to link your account.")
+        await author.send(f"<@{backer}> attempted to tip you with {amount} 🐻 but you have not linked your Stellar account. Please use `/link` to link your account.")
         return f"{author} is not registered! They have been notiified"
 
     # Check if the user has enough balance
@@ -49,14 +49,14 @@ async def on_reaction_add(reaction, user):
         user.id != reaction.message.author.id
         and user.id != client.user.id
     ):
-        if reaction.emoji == "🐻‍❄️":
-            user.send(processTip(100, reaction.message.author.id, user.id))
-        if reaction.emoji == "🐻‍":
-            user.send(processTip(10, reaction.message.author.id, user.id))
-        elif reaction.emoji == "🐼":
-            user.send(processTip(5, reaction.message.author.id, user.id))
-        elif reaction.emoji == "🧸":
-            user.send(processTip(1, reaction.message.author.id, user.id))
+        if str(reaction.emoji) == "🐻‍❄️":
+            await user.send(await processTip(100, reaction.message.author, user.id))
+        if str(reaction.emoji) == "🐻":
+            await user.send(await processTip(10, reaction.message.author, user.id))
+        elif str(reaction.emoji) == "🐼":
+            await user.send(await processTip(5, reaction.message.author, user.id))
+        elif str(reaction.emoji) == "🧸":
+            await user.send(await processTip(1, reaction.message.author, user.id))
 
 
 
