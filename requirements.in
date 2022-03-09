@@ -1,0 +1,13 @@
+discord.py
+discord-py-slash-command
+stellar-sdk
+postbin
+psycopg2
+pip-tools
+flake8
+black
+sentry-sdk
+requests-mock
+environs
+coverage
+seaborn
